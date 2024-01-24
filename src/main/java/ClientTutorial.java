@@ -38,7 +38,7 @@ public class ClientTutorial {
     //deletePatient(client, patients.get(0), iParser);
     Condition condition = addCondition(client, "259");
     sendResourceToServer(client, condition);
-    Encounter encounter = addEncounter(client, "259not");
+    Encounter encounter = addEncounter(client, "259");
     sendResourceToServer(client, encounter);
   }
 
