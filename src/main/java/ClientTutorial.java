@@ -3,6 +3,7 @@ import ca.uhn.fhir.parser.IParser;
 import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
 import java.util.List;
+import java.util.UUID;
 import org.hl7.fhir.instance.model.api.IBaseBundle;
 import org.hl7.fhir.r4.model.Address;
 import org.hl7.fhir.r4.model.Address.AddressType;
@@ -26,7 +27,14 @@ public class ClientTutorial {
     System.out.println(iParser.encodeResourceToString(pat));
     //sendResourceToServer(client, pat);
     List<Patient> patients = searchPatient(client);
+    updatePatient(client, patients.get(0));
+  }
 
+  private static void updatePatient(IGenericClient client, Patient patient) {
+    patient.addName().addGiven(UUID.randomUUID().toString());
+    MethodOutcome outcome = client.update()
+        .resource(patient).execute();
+    System.out.println(outcome.getId());
   }
 
   private static List<Patient> searchPatient(IGenericClient client) {
