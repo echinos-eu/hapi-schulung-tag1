@@ -107,7 +107,7 @@ public class ClientTutorial {
   }
 
 
-  private static Patient getIsikPatient(FhirContext ctx) {
+  public static Patient getIsikPatient(FhirContext ctx) {
     Patient pat = new Patient();
     pat.getMeta().addProfile("https://gematik.de/fhir/isik/v3/Basismodul/StructureDefinition/ISiKPatient");
     HumanName name = pat.addName();
@@ -134,7 +134,7 @@ public class ClientTutorial {
         .setValue(new StringType("12"));
     address.setCity("Stadt");
     address.setPostalCode("postalCode");
-    address.setCountry("DE");
+    //address.setCountry("DE");
     return pat;
   }
 
