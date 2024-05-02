@@ -43,6 +43,28 @@ public class ClientTutorial {
 
   static Patient getIsikPatient() {
     Patient patient = new Patient();
+    HumanName humanName = patient.addName();
+    humanName.addGiven("Patrick").addGiven("Fritz").setFamily("Werner")
+        .setUse(NameUse.OFFICIAL);
+    patient.setBirthDateElement(new DateType("1982-04-03"));
+    Identifier identifier = patient.addIdentifier();
+    identifier.getType().addCoding()
+        .setSystem("http://terminology.hl7.org/CodeSystem/v2-0203")
+        .setCode("MR").setDisplay("Patientennummer");
+    identifier.setSystem("http://gefyra.de/fhir/sid/Patientennummer").setValue("0124654687");
+    patient.setActive(true);
+    patient.setGender(AdministrativeGender.MALE);
+    Address address = patient.addAddress();
+    address.setType(AddressType.BOTH);
+    StringType line = address.addLineElement();
+    line.setValue("Musterstraße 3");
+    Extension strasse = line.addExtension();
+    strasse.setUrl("http://hl7.org/fhir/StructureDefinition/iso21090-ADXP-streetName")
+        .setValue(new StringType("Musterstraße"));
+    line.addExtension().setUrl("http://hl7.org/fhir/StructureDefinition/iso21090-ADXP-houseNumber")
+        .setValue(new StringType("3"));
+    address.setCity("Stadt");
+    address.setPostalCode("13245");
     return patient;
   }
 }
