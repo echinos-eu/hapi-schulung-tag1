@@ -2,10 +2,17 @@ import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.parser.IParser;
 import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
+import java.util.ArrayList;
 import java.util.Date;
-import org.hl7.fhir.instance.model.api.IIdType;
+import java.util.List;
+import net.sf.saxon.expr.Component.M;
 import org.hl7.fhir.r4.model.Address;
 import org.hl7.fhir.r4.model.Address.AddressType;
+import org.hl7.fhir.r4.model.Bundle;
+import org.hl7.fhir.r4.model.Bundle.BundleEntryComponent;
+import org.hl7.fhir.r4.model.Bundle.BundleEntryRequestComponent;
+import org.hl7.fhir.r4.model.Bundle.BundleType;
+import org.hl7.fhir.r4.model.Bundle.HTTPVerb;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Condition;
 import org.hl7.fhir.r4.model.DateType;
@@ -16,18 +23,21 @@ import org.hl7.fhir.r4.model.Enumerations.AdministrativeGender;
 import org.hl7.fhir.r4.model.Extension;
 import org.hl7.fhir.r4.model.HumanName;
 import org.hl7.fhir.r4.model.HumanName.NameUse;
+import org.hl7.fhir.r4.model.IdType;
 import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.Reference;
+import org.hl7.fhir.r4.model.Resource;
 import org.hl7.fhir.r4.model.StringType;
+import org.hl7.fhir.r4.model.codesystems.HttpVerb;
 
-public class ClientTutorialDelete {
+public class ClientTutorialTransaction {
 
   private static FhirContext ctx;
   private static IParser iParser;
   private static IGenericClient client;
   private static String sidSystem = "http://gefyra.de/fhir/sid/Patientennummer";
-  private static String sidNumber = "01246546874559232323233";
+  private static String sidNumber = "01246546879232323233";
 
   public static void main(String[] args) {
     ctx = FhirContext.forR4Cached();
@@ -36,26 +46,42 @@ public class ClientTutorialDelete {
     client = ctx.newRestfulGenericClient(serverUrl);
 
     Patient isikPatient = getIsikPatient();
-//    String patientString = iParser.encodeResourceToString(isikPatient);
-//    System.out.println(patientString);
+    isikPatient.setId(IdType.newRandomUuid());
 
-    // only create patient if not already on server
-    MethodOutcome outcome = client.create()
-        .resource(isikPatient)
-        .conditional()
-        .where(Patient.IDENTIFIER.exactly().systemAndValues(sidSystem, sidNumber))
-        .execute();
-    IIdType patientId = outcome.getId();
-    isikPatient.setId(patientId);
-    System.out.println("PatientenId: " + patientId.getIdPart());
+    //Encounter
+    Encounter encounter = getISiKEncounter(isikPatient);
+    encounter.setId(IdType.newRandomUuid());
 
-    MethodOutcome outcome1 = client.delete().resource(isikPatient).execute();
-    MethodOutcome outcome2 = client.delete().resource(isikPatient).execute();
-    System.out.println(iParser.encodeResourceToString(outcome2.getOperationOutcome()));
-    client.delete().resourceById("Patient", "1004").execute();
+    //Condition
+    Condition iSiKCondition = getISiKCondition(isikPatient, encounter);
+    iSiKCondition.setId(IdType.newRandomUuid());
+    List< Resource> resources = new ArrayList<>();
+    resources.add(isikPatient);
+    resources.add(encounter);
+    resources.add(iSiKCondition);
+
+    Bundle bundle = getTransactionBundleFromList(resources);
+    System.out.println(iParser.encodeResourceToString(bundle));
+
+    Bundle responseBundle = client.transaction().withBundle(bundle).execute();
+    System.out.println(iParser.encodeResourceToString(responseBundle));
   }
 
-  private static Encounter getISiKEncounter(IIdType patientId) {
+  private static Bundle getTransactionBundleFromList(List<Resource> resources) {
+    Bundle bundle = new Bundle();
+    bundle.setType(BundleType.TRANSACTION);
+    resources.forEach(r -> {
+      BundleEntryComponent bundleEntryComponent = bundle.addEntry();
+      bundleEntryComponent.setResource(r);
+      bundleEntryComponent.setFullUrl(r.getId());
+      BundleEntryRequestComponent request = bundleEntryComponent.getRequest();
+      request.setMethod(HTTPVerb.POST);
+      request.setUrl(r.getResourceType().name());
+    });
+    return bundle;
+  }
+
+  private static Encounter getISiKEncounter(Patient patient) {
     Encounter encounter = new Encounter();
     Identifier identifier = encounter.addIdentifier();
     identifier.getType().addCoding()
@@ -68,15 +94,14 @@ public class ClientTutorialDelete {
     encounter.setStatus(EncounterStatus.PLANNED);
     encounter.getClass_().setSystem("http://terminology.hl7.org/CodeSystem/v3-ActCode")
         .setCode("IMP").setDisplay("stationärer Aufenthalt");
-    encounter.setSubject(new Reference("Patient/" + patientId.getIdPart()));
+    encounter.setSubject(new Reference(patient.getId()));
     return encounter;
   }
 
-  private static Condition getISiKCondition(IIdType patientId, IIdType idEncounter) {
+  private static Condition getISiKCondition(Patient patient, Encounter encounter) {
     Condition condition = new Condition();
-    condition.setSubject(new Reference(patientId.getResourceType()
-        + "/" + patientId.getIdPart()));
-    condition.setEncounter(new Reference("Encounter/" + idEncounter.getIdPart()));
+    condition.setSubject(new Reference(patient.getIdPart()));
+    condition.setEncounter(new Reference(encounter.getId()));
     condition.getCode().addCoding().setSystem("http://fhir.de/CodeSystem/bfarm/icd-10-gm")
         .setCode("R05").setDisplay("Husten");
     condition.setRecordedDate(new Date());
