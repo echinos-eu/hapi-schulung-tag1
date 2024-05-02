@@ -1,18 +1,11 @@
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.parser.IParser;
-import ca.uhn.fhir.rest.api.CacheControlDirective;
 import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
 import java.util.Date;
-import java.util.List;
-import java.util.UUID;
-import org.hl7.fhir.instance.model.api.IBaseOperationOutcome;
-import org.hl7.fhir.instance.model.api.IBaseResource;
 import org.hl7.fhir.instance.model.api.IIdType;
 import org.hl7.fhir.r4.model.Address;
 import org.hl7.fhir.r4.model.Address.AddressType;
-import org.hl7.fhir.r4.model.Bundle;
-import org.hl7.fhir.r4.model.CodeType;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Condition;
 import org.hl7.fhir.r4.model.DateType;
@@ -50,21 +43,45 @@ public class ClientTutorial {
     MethodOutcome outcome = client.create()
         .resource(isikPatient)
         .conditional()
-        .where(Patient.IDENTIFIER.exactly().systemAndValues(sidSystem,sidNumber))
+        .where(Patient.IDENTIFIER.exactly().systemAndValues(sidSystem, sidNumber))
         .execute();
     IIdType patientId = outcome.getId();
     System.out.println("PatientenId: " + patientId.getIdPart());
 
+    //Encounter
+    Encounter encounter = getISiKEncounter(patientId);
+    MethodOutcome encounterOutcome = client.create().resource(encounter).execute();
+    IIdType idEncounter = encounterOutcome.getId();
+    System.out.println("EncounterId: " + idEncounter);
+
     //Condition
-    Condition iSiKCondition = getISiKCondition(patientId);
+    Condition iSiKCondition = getISiKCondition(patientId, idEncounter);
     MethodOutcome conditionOutcome = client.create().resource(iSiKCondition).execute();
     System.out.println("ConditionId: " + conditionOutcome.getId());
   }
 
-  private static Condition getISiKCondition(IIdType patientId) {
+  private static Encounter getISiKEncounter(IIdType patientId) {
+    Encounter encounter = new Encounter();
+    Identifier identifier = encounter.addIdentifier();
+    identifier.getType().addCoding()
+        .setSystem("http://terminology.hl7.org/CodeSystem/v2-0203")
+        .setCode("VN").setDisplay("visit number");
+    identifier.setSystem("http://gefyra.de/fhir/sid/Aufnahmenummer")
+        .setValue("66548646848");
+    encounter.addType().addCoding().setSystem("http://fhir.de/CodeSystem/Kontaktebene")
+        .setCode("abteilungskontakt").setDisplay("Abteilungskontakt");
+    encounter.setStatus(EncounterStatus.PLANNED);
+    encounter.getClass_().setSystem("http://terminology.hl7.org/CodeSystem/v3-ActCode")
+        .setCode("IMP").setDisplay("stationärer Aufenthalt");
+    encounter.setSubject(new Reference("Patient/" + patientId.getIdPart()));
+    return encounter;
+  }
+
+  private static Condition getISiKCondition(IIdType patientId, IIdType idEncounter) {
     Condition condition = new Condition();
     condition.setSubject(new Reference(patientId.getResourceType()
         + "/" + patientId.getIdPart()));
+    condition.setEncounter(new Reference("Encounter/" + idEncounter.getIdPart()));
     condition.getCode().addCoding().setSystem("http://fhir.de/CodeSystem/bfarm/icd-10-gm")
         .setCode("R05").setDisplay("Husten");
     condition.setRecordedDate(new Date());
