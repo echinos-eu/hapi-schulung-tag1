@@ -12,10 +12,12 @@ import org.hl7.fhir.r4.model.Address;
 import org.hl7.fhir.r4.model.Address.AddressType;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.CodeType;
+import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Condition;
 import org.hl7.fhir.r4.model.DateType;
 import org.hl7.fhir.r4.model.Encounter;
 import org.hl7.fhir.r4.model.Encounter.EncounterStatus;
+import org.hl7.fhir.r4.model.Enumeration;
 import org.hl7.fhir.r4.model.Enumerations.AdministrativeGender;
 import org.hl7.fhir.r4.model.Extension;
 import org.hl7.fhir.r4.model.HumanName;
@@ -39,6 +41,13 @@ public class ClientTutorial {
     client = ctx.newRestfulGenericClient(serverUrl);
 
     Patient isikPatient = getIsikPatient();
+    String patientString = iParser.encodeResourceToString(isikPatient);
+    System.out.println(patientString);
+
+    MethodOutcome outcome = client.create()
+        .resource(isikPatient)
+        .execute();
+    System.out.println(outcome.getId());
   }
 
   static Patient getIsikPatient() {
@@ -53,7 +62,12 @@ public class ClientTutorial {
         .setCode("MR").setDisplay("Patientennummer");
     identifier.setSystem("http://gefyra.de/fhir/sid/Patientennummer").setValue("0124654687");
     patient.setActive(true);
-    patient.setGender(AdministrativeGender.MALE);
+    Enumeration<AdministrativeGender> genderElement = patient.getGenderElement();
+    genderElement.setValue(AdministrativeGender.OTHER);
+    genderElement.addExtension().setUrl("http://fhir.de/StructureDefinition/gender-amtlich-de")
+        .setValue(new Coding("http://fhir.de/CodeSystem/gender-amtlich-de",
+            "X", "divers"));
+
     Address address = patient.addAddress();
     address.setType(AddressType.BOTH);
     StringType line = address.addLineElement();
