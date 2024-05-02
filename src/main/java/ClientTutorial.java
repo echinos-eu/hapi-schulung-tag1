@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.UUID;
 import org.hl7.fhir.instance.model.api.IBaseOperationOutcome;
 import org.hl7.fhir.instance.model.api.IBaseResource;
+import org.hl7.fhir.instance.model.api.IIdType;
 import org.hl7.fhir.r4.model.Address;
 import org.hl7.fhir.r4.model.Address.AddressType;
 import org.hl7.fhir.r4.model.Bundle;
@@ -25,7 +26,6 @@ import org.hl7.fhir.r4.model.HumanName.NameUse;
 import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.Reference;
-import org.hl7.fhir.r4.model.Resource;
 import org.hl7.fhir.r4.model.StringType;
 
 public class ClientTutorial {
@@ -33,6 +33,8 @@ public class ClientTutorial {
   private static FhirContext ctx;
   private static IParser iParser;
   private static IGenericClient client;
+  private static String sidSystem = "http://gefyra.de/fhir/sid/Patientennummer";
+  private static String sidNumber = "01246546879232323233";
 
   public static void main(String[] args) {
     ctx = FhirContext.forR4Cached();
@@ -41,13 +43,33 @@ public class ClientTutorial {
     client = ctx.newRestfulGenericClient(serverUrl);
 
     Patient isikPatient = getIsikPatient();
-    String patientString = iParser.encodeResourceToString(isikPatient);
-    System.out.println(patientString);
+//    String patientString = iParser.encodeResourceToString(isikPatient);
+//    System.out.println(patientString);
 
+    // only create patient if not already on server
     MethodOutcome outcome = client.create()
         .resource(isikPatient)
+        .conditional()
+        .where(Patient.IDENTIFIER.exactly().systemAndValues(sidSystem,sidNumber))
         .execute();
-    System.out.println(outcome.getId());
+    IIdType patientId = outcome.getId();
+    System.out.println("PatientenId: " + patientId.getIdPart());
+
+    //Condition
+    Condition iSiKCondition = getISiKCondition(patientId);
+    MethodOutcome conditionOutcome = client.create().resource(iSiKCondition).execute();
+    System.out.println("ConditionId: " + conditionOutcome.getId());
+  }
+
+  private static Condition getISiKCondition(IIdType patientId) {
+    Condition condition = new Condition();
+    condition.setSubject(new Reference(patientId.getResourceType()
+        + "/" + patientId.getIdPart()));
+    condition.getCode().addCoding().setSystem("http://fhir.de/CodeSystem/bfarm/icd-10-gm")
+        .setCode("R05").setDisplay("Husten");
+    condition.setRecordedDate(new Date());
+    condition.addNote().setText("Ich bin eine Notiz");
+    return condition;
   }
 
   static Patient getIsikPatient() {
@@ -60,7 +82,8 @@ public class ClientTutorial {
     identifier.getType().addCoding()
         .setSystem("http://terminology.hl7.org/CodeSystem/v2-0203")
         .setCode("MR").setDisplay("Patientennummer");
-    identifier.setSystem("http://gefyra.de/fhir/sid/Patientennummer").setValue("0124654687");
+
+    identifier.setSystem(sidSystem).setValue(sidNumber);
     patient.setActive(true);
     Enumeration<AdministrativeGender> genderElement = patient.getGenderElement();
     genderElement.setValue(AdministrativeGender.OTHER);
