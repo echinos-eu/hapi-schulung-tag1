@@ -2,7 +2,12 @@ import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.parser.IParser;
 import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
+import ca.uhn.fhir.validation.ValidationOptions;
+import ca.uhn.fhir.validation.ValidationResult;
+import java.io.IOException;
 import java.util.Date;
+import java.util.List;
+import org.hl7.fhir.instance.model.api.IBaseOperationOutcome;
 import org.hl7.fhir.instance.model.api.IIdType;
 import org.hl7.fhir.r4.model.Address;
 import org.hl7.fhir.r4.model.Address.AddressType;
@@ -17,51 +22,64 @@ import org.hl7.fhir.r4.model.Extension;
 import org.hl7.fhir.r4.model.HumanName;
 import org.hl7.fhir.r4.model.HumanName.NameUse;
 import org.hl7.fhir.r4.model.Identifier;
+import org.hl7.fhir.r4.model.OperationOutcome;
+import org.hl7.fhir.r4.model.OperationOutcome.OperationOutcomeIssueComponent;
 import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.StringType;
 
-public class ClientTutorial {
+public class ValidationTest {
 
   private static FhirContext ctx;
   private static IParser iParser;
   private static IGenericClient client;
   private static String sidSystem = "http://gefyra.de/fhir/sid/Patientennummer";
-  private static String sidNumber = "01246546fff879232323233";
+  private static String sidNumber = "01246546879232323233";
 
-  public static void main(String[] args) {
+  public static void main(String[] args) throws IOException {
     ctx = FhirContext.forR4Cached();
     iParser = ctx.newJsonParser().setPrettyPrint(true);
     String serverUrl = "https://fhir.echinos.eu/fhir";
     client = ctx.newRestfulGenericClient(serverUrl);
 
     Patient isikPatient = getIsikPatient();
-//    String patientString = iParser.encodeResourceToString(isikPatient);
-//    System.out.println(patientString);
+    ISiKValidator validator = new ISiKValidator(ctx);
+    ValidationOptions validationOptions = new ValidationOptions();
+    validationOptions.addProfile("https://gematik.de/fhir/isik/StructureDefinition/ISiKPatient");
+    ValidationResult validationResult = validator.validateWithResult(isikPatient,
+        validationOptions);
+    System.out.println("Validierung erfolgreich? " + validationResult.isSuccessful());
+    IBaseOperationOutcome operationOutcome = validationResult.toOperationOutcome();
+    System.out.println(iParser.encodeResourceToString(operationOutcome));
 
-    // only create patient if not already on server
-    MethodOutcome outcome = client.create()
-        .resource(isikPatient)
-        .conditional()
-        .where(Patient.IDENTIFIER.exactly().systemAndValues(sidSystem, sidNumber))
-        .execute();
-    IIdType patientId = outcome.getId();
-    System.out.println("PatientenId: " + patientId.getIdPart());
+    Encounter iSiKEncounter = getISiKEncounter(isikPatient.getIdElement());
 
-    //Encounter
-    Encounter encounter = getISiKEncounter(patientId);
-    MethodOutcome encounterOutcome = client.create().resource(encounter).execute();
-    IIdType idEncounter = encounterOutcome.getId();
-    System.out.println("EncounterId: " + idEncounter);
+    ValidationResult validationResultEncounter = validator.validateWithResult(iSiKEncounter);
+    System.out.println(
+        "Validierung Encounter erfolgreich? " + validationResultEncounter.isSuccessful());
+    operationOutcome = validationResultEncounter.toOperationOutcome();
+    System.out.println(iParser.encodeResourceToString(operationOutcome));
 
-    //Condition
-    Condition iSiKCondition = getISiKCondition(patientId, idEncounter);
-    MethodOutcome conditionOutcome = client.create().resource(iSiKCondition).execute();
-    System.out.println("ConditionId: " + conditionOutcome.getId());
+    Condition iSiKCondition = getISiKCondition(isikPatient.getIdElement(),
+        iSiKEncounter.getIdElement());
+    ValidationResult validationResultCondition = validator.validateWithResult(iSiKCondition);
+    System.out.println(
+        "Validierung Condition erfolgreich? " + validationResultCondition.isSuccessful());
+    operationOutcome = validationResultCondition.toOperationOutcome();
+    OperationOutcome outcomeR4 = (OperationOutcome) operationOutcome;
+    List<OperationOutcomeIssueComponent> filterIssues = outcomeR4.getIssue()
+        .stream().filter(i -> !i.getDetails().getCodingFirstRep().getCode()
+            .equals("Terminology_PassThrough_TX_Message") && i.getDiagnostics().contains("http://fhir.de/CodeSystem/bfarm/icd-10-gm")).toList();
+    outcomeR4.setIssue(filterIssues);
+
+    System.out.println(iParser.encodeResourceToString(outcomeR4));
+
   }
 
   private static Encounter getISiKEncounter(IIdType patientId) {
     Encounter encounter = new Encounter();
+    encounter.getMeta().addProfile(
+        "https://gematik.de/fhir/isik/StructureDefinition/ISiKKontaktGesundheitseinrichtung");
     Identifier identifier = encounter.addIdentifier();
     identifier.getType().addCoding()
         .setSystem("http://terminology.hl7.org/CodeSystem/v2-0203")
@@ -91,6 +109,7 @@ public class ClientTutorial {
 
   static Patient getIsikPatient() {
     Patient patient = new Patient();
+//    patient.getMeta().addProfile("https://gematik.de/fhir/isik/StructureDefinition/ISiKPatient");
     HumanName humanName = patient.addName();
     humanName.addGiven("Patrick").addGiven("Fritz").setFamily("Werner")
         .setUse(NameUse.OFFICIAL);
@@ -119,6 +138,7 @@ public class ClientTutorial {
         .setValue(new StringType("3"));
     address.setCity("Stadt");
     address.setPostalCode("13245");
+    address.setCountry("DE");
     return patient;
   }
 }

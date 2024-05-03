@@ -39,7 +39,7 @@ public class ISiKValidator extends FhirValidator {
     FhirInstanceValidator validator = new FhirInstanceValidator(cachingValidationSupport);
     registerValidatorModule(validator);
 
-    validator.setNoExtensibleWarnings(false);
-    validator.setErrorForUnknownProfiles(true);
+    validator.setNoExtensibleWarnings(true);
+    validator.setErrorForUnknownProfiles(false);
   }
 }
