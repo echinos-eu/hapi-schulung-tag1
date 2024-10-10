@@ -36,9 +36,14 @@ public class ClientTutorial {
     iParser = ctx.newJsonParser();
     iParser.setPrettyPrint(true);
 
-
     Patient isikPatient = createIsikPatient();
-
+    MethodOutcome outcome = client.create()
+        .resource(isikPatient)
+        .conditional()
+        .where(Patient.IDENTIFIER.exactly().systemAndValues(sidSystem, sidNumber))
+        .execute();
+    System.out.println(outcome.getId());
+    System.out.println(outcome.getId().getIdPart());
 
     Encounter isikKontakt = getIsiKEncounter("Patient/123");
 
@@ -82,6 +87,7 @@ public class ClientTutorial {
     address.setPostalCode("68169");
     return patient;
   }
+
   static Condition getIsiKCondition(String patientId) {
     Condition condition = new Condition();
     condition.setSubject(new Reference(patientId));
