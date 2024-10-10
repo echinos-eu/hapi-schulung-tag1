@@ -37,6 +37,8 @@ public class ClientTutorial {
     Patient isikPatient = createIsikPatient();
     String patientString = iParser.encodeResourceToString(isikPatient);
     System.out.println(patientString);
+    Encounter isikKontakt = getIsiKEncounter("Patient/123");
+    System.out.println(iParser.encodeResourceToString(isikKontakt));
     // add Diagnose
     Condition isiKCondition = getIsiKCondition("Patient/123");
     System.out.println(iParser.encodeResourceToString(isiKCondition));
@@ -85,5 +87,21 @@ public class ClientTutorial {
     condition.getCode().addCoding().setSystem("http://fhir.de/CodeSystem/bfarm/icd-10-gm")
         .setCode("R05").setDisplay("Husten");
     return condition;
+  }
+
+  private static Encounter getIsiKEncounter(String patientId) {
+    Encounter encounter = new Encounter();
+    encounter.setSubject(new Reference(patientId));
+    Identifier identifier = encounter.addIdentifier();
+    identifier.getType().addCoding()
+        .setSystem("http://terminology.hl7.org/CodeSystem/v2-0203")
+        .setCode("VN")
+        .setDisplay("visit number");
+    identifier.setSystem("http://gefyra.de/fhir/sid/Aufnahmenummer");
+    identifier.setValue("515816941");
+    encounter.addType().addCoding().setSystem("http://fhir.de/CodeSystem/Kontaktebene")
+        .setCode("abteilungskontakt").setDisplay("Abteilungskontakt");
+    encounter.setStatus(EncounterStatus.PLANNED);
+    return encounter;
   }
 }
