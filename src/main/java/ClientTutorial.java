@@ -43,14 +43,16 @@ public class ClientTutorial {
         .where(Patient.IDENTIFIER.exactly().systemAndValues(sidSystem, sidNumber))
         .execute();
     System.out.println(outcome.getId());
-    System.out.println(outcome.getId().getIdPart());
+    String patientID = "Patient/" + outcome.getId().getIdPart();
 
-    Encounter isikKontakt = getIsiKEncounter("Patient/123");
+    Encounter isikKontakt = getIsiKEncounter(patientID);
+    MethodOutcome outcomeKontakt = client.create().resource(isikKontakt).execute();
+    System.out.println(outcomeKontakt.getId());
 
     // add Diagnose
-    Condition isiKCondition = getIsiKCondition("Patient/123");
-
-
+    Condition isiKCondition = getIsiKCondition(patientID);
+    MethodOutcome outcomeDiagnose = client.create().resource(isiKCondition).execute();
+    System.out.println(outcomeDiagnose.getId());
   }
 
   static Patient createIsikPatient() {
