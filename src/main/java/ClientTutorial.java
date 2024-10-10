@@ -32,16 +32,19 @@ public class ClientTutorial {
 
   public static void main(String[] args) {
     ctx = FhirContext.forR4Cached();
+    client = ctx.newRestfulGenericClient("https://fhir.echinos.eu/fhir");
     iParser = ctx.newJsonParser();
     iParser.setPrettyPrint(true);
+
+
     Patient isikPatient = createIsikPatient();
-    String patientString = iParser.encodeResourceToString(isikPatient);
-    System.out.println(patientString);
+
+
     Encounter isikKontakt = getIsiKEncounter("Patient/123");
-    System.out.println(iParser.encodeResourceToString(isikKontakt));
+
     // add Diagnose
     Condition isiKCondition = getIsiKCondition("Patient/123");
-    System.out.println(iParser.encodeResourceToString(isiKCondition));
+
 
   }
 
