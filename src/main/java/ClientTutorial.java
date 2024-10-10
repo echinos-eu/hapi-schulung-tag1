@@ -8,6 +8,7 @@ import org.hl7.fhir.r4.model.Address;
 import org.hl7.fhir.r4.model.Address.AddressType;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Condition;
+import org.hl7.fhir.r4.model.DateTimeType;
 import org.hl7.fhir.r4.model.DateType;
 import org.hl7.fhir.r4.model.Encounter;
 import org.hl7.fhir.r4.model.Encounter.EncounterStatus;
@@ -27,9 +28,49 @@ public class ClientTutorial {
   private static IParser iParser;
   private static IGenericClient client;
   private static String sidSystem = "http://gefyra.de/fhir/sid/Patientennummer";
-  private static String sidNumber = "";
+  private static String sidNumber = "9849849846984964132197";
 
   public static void main(String[] args) {
+    ctx = FhirContext.forR4Cached();
+    iParser = ctx.newJsonParser();
+    iParser.setPrettyPrint(true);
+    Patient isikPatient = createIsikPatient();
+    String patientString = iParser.encodeResourceToString(isikPatient);
+    System.out.println(patientString);
+  }
 
+  static Patient createIsikPatient() {
+    Patient patient = new Patient();
+    HumanName humanName = patient.addName();
+    humanName.setFamily("Werner").addGiven("Patrick").addGiven("Fritz")
+        .setUse(NameUse.OFFICIAL);
+    patient.setBirthDateElement(new DateType("1982-04-03"));
+    //alternativ:
+    //patient.setBirthDate(new Date());
+    patient.setGender(AdministrativeGender.OTHER);
+    Enumeration<AdministrativeGender> genderElement = patient.getGenderElement();
+    genderElement.addExtension().setUrl("http://fhir.de/StructureDefinition/gender-amtlich-de")
+        .setValue(new Coding("http://fhir.de/CodeSystem/gender-amtlich-de", "X", "unbestimmt"));
+    Identifier identifier = patient.addIdentifier();
+    identifier.getType().addCoding()
+        .setSystem("http://terminology.hl7.org/CodeSystem/v2-0203")
+        .setCode("MR")
+        .setDisplay("Patientennummer");
+    identifier.setSystem(sidSystem).setValue(sidNumber);
+    patient.setActive(true);
+    //Adresse
+    Address address = patient.addAddress();
+    address.setType(AddressType.BOTH);
+    StringType line = address.addLineElement();
+    line.setValue("Musterstraße 130");
+    Extension strassenName = line.addExtension();
+    strassenName.setUrl("http://hl7.org/fhir/StructureDefinition/iso21090-ADXP-streetName")
+        .setValue(new StringType("Musterstraße"));
+    Extension hausnummer = line.addExtension();
+    hausnummer.setUrl("http://hl7.org/fhir/StructureDefinition/iso21090-ADXP-houseNumber")
+        .setValue(new StringType("130"));
+    address.setCity("Mannheim");
+    address.setPostalCode("68169");
+    return patient;
   }
 }
