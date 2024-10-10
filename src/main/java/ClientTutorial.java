@@ -37,6 +37,10 @@ public class ClientTutorial {
     Patient isikPatient = createIsikPatient();
     String patientString = iParser.encodeResourceToString(isikPatient);
     System.out.println(patientString);
+    // add Diagnose
+    Condition isiKCondition = getIsiKCondition("Patient/123");
+    System.out.println(iParser.encodeResourceToString(isiKCondition));
+
   }
 
   static Patient createIsikPatient() {
@@ -72,5 +76,14 @@ public class ClientTutorial {
     address.setCity("Mannheim");
     address.setPostalCode("68169");
     return patient;
+  }
+  static Condition getIsiKCondition(String patientId) {
+    Condition condition = new Condition();
+    condition.setSubject(new Reference(patientId));
+    condition.setRecordedDate(new Date());
+    condition.addNote().setText("Ich bin eine Notiz");
+    condition.getCode().addCoding().setSystem("http://fhir.de/CodeSystem/bfarm/icd-10-gm")
+        .setCode("R05").setDisplay("Husten");
+    return condition;
   }
 }
