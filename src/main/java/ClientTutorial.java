@@ -87,6 +87,7 @@ public class ClientTutorial {
         .setValue(new StringType("130"));
     address.setCity("Mannheim");
     address.setPostalCode("68169");
+    address.setCountry("DEU");
     return patient;
   }
 
