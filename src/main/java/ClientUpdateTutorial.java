@@ -1,6 +1,7 @@
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.parser.IParser;
 import ca.uhn.fhir.rest.api.MethodOutcome;
+import ca.uhn.fhir.rest.api.SearchStyleEnum;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
 import java.util.Date;
 import java.util.UUID;
@@ -39,7 +40,10 @@ public class ClientUpdateTutorial {
     Bundle patientBundle = client.search()
         .byUrl("Patient?identifier=" + sidSystem + "|" + sidNumber
             + "&_total=accurate&_count=100&_revinclude=Encounter:subject&_revinclude=Condition:subject")
-        .returnBundle(Bundle.class).execute();
+        .returnBundle(Bundle.class)
+        // search will be using POST Interaction
+        .usingStyle(SearchStyleEnum.POST)
+        .execute();
 
     System.out.println(iParser.encodeResourceToString(patientBundle));
     System.out.println(patientBundle.getTotal());

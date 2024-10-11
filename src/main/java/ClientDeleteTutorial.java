@@ -4,6 +4,7 @@ import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
 import java.util.Date;
 import java.util.UUID;
+import org.hl7.fhir.instance.model.api.IIdType;
 import org.hl7.fhir.r4.model.Address;
 import org.hl7.fhir.r4.model.Address.AddressType;
 import org.hl7.fhir.r4.model.Bundle;
@@ -36,11 +37,17 @@ public class ClientDeleteTutorial {
     iParser = ctx.newJsonParser();
     iParser.setPrettyPrint(true);
 
-    Bundle patientBundle = client.search()
-        .byUrl("Patient?identifier=" + sidSystem + "|" + sidNumber
-            + "&_total=accurate&_count=100&_revinclude=Encounter:subject&_revinclude=Condition:subject")
-        .returnBundle(Bundle.class).execute();
+    MethodOutcome patientCreateOutcome = client.create().resource(createIsikPatient()).execute();
+    IIdType id = patientCreateOutcome.getId();
+    System.out.println(id.toString());
 
+    Patient patient = client.read().resource(Patient.class).withId(id.getIdPart()).execute();
+
+    MethodOutcome outcome = client.delete().resource(patient).execute();
+
+    System.out.println(iParser.encodeResourceToString(outcome.getOperationOutcome()));
+
+    patient = client.read().resource(Patient.class).withId(id.getIdPart()).execute();
   }
 
   static Patient createIsikPatient() {
