@@ -3,6 +3,10 @@ import ca.uhn.fhir.parser.IParser;
 import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.api.SearchStyleEnum;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
+import ca.uhn.fhir.rest.client.api.IHttpRequest;
+import ca.uhn.fhir.rest.client.api.IHttpResponse;
+import ca.uhn.fhir.rest.client.interceptor.CapturingInterceptor;
+import ca.uhn.fhir.rest.client.interceptor.LoggingInterceptor;
 import java.util.Date;
 import java.util.UUID;
 import org.hl7.fhir.r4.model.Address;
@@ -37,6 +41,10 @@ public class ClientUpdateTutorial {
     iParser = ctx.newJsonParser();
     iParser.setPrettyPrint(true);
 
+    client.registerInterceptor(new LoggingInterceptor(true));
+    CapturingInterceptor theInterceptor = new CapturingInterceptor();
+    client.registerInterceptor(theInterceptor);
+
     Bundle patientBundle = client.search()
         .byUrl("Patient?identifier=" + sidSystem + "|" + sidNumber
             + "&_total=accurate&_count=100&_revinclude=Encounter:subject&_revinclude=Condition:subject")
@@ -44,6 +52,9 @@ public class ClientUpdateTutorial {
         // search will be using POST Interaction
         .usingStyle(SearchStyleEnum.POST)
         .execute();
+
+    IHttpRequest lastRequest = theInterceptor.getLastRequest();
+    IHttpResponse lastResponse = theInterceptor.getLastResponse();
 
     System.out.println(iParser.encodeResourceToString(patientBundle));
     System.out.println(patientBundle.getTotal());
