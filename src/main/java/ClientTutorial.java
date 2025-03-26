@@ -1,5 +1,6 @@
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.parser.IParser;
+import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
 import java.util.Calendar;
 import java.util.Date;
@@ -28,12 +29,22 @@ public class ClientTutorial {
     iParser.setPrettyPrint(true);
 
     Patient patient = createPatient();
+
+    MethodOutcome patientOutCome = client.create()
+        .resource(patient)
+        .execute();
+    patient.setId(patientOutCome.getId().getIdPart());
     System.out.println(iParser.encodeResourceToString(patient));
 
+
     Practitioner practitioner = createPractitioner();
+    MethodOutcome practitionerOutcome = client.create().resource(practitioner).execute();
+    practitioner.setId(practitionerOutcome.getId().getIdPart());
     System.out.println(iParser.encodeResourceToString(practitioner));
 
     Condition condition = createCondition(patient, practitioner);
+    MethodOutcome conditionOutcome = client.create().resource(condition).execute();
+    System.out.println("ID der Condition: " + conditionOutcome.getId().getIdPart());
     System.out.println(iParser.encodeResourceToString(condition));
 
   }
