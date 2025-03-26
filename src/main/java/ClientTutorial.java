@@ -8,6 +8,7 @@ import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.HumanName;
 import org.hl7.fhir.r4.model.HumanName.NameUse;
 import org.hl7.fhir.r4.model.Patient;
+import org.hl7.fhir.r4.model.Practitioner;
 import org.hl7.fhir.r4.model.StringType;
 
 public class ClientTutorial {
@@ -27,7 +28,39 @@ public class ClientTutorial {
     Patient patient = createPatient();
     System.out.println(iParser.encodeResourceToString(patient));
 
+    Practitioner practitioner = createPractitioner();
+    System.out.println(iParser.encodeResourceToString(practitioner));
 
+
+  }
+
+  private static Practitioner createPractitioner() {
+    Practitioner practitioner = new Practitioner();
+    practitioner
+        .getMeta()
+        .addProfile("https://fhir.kbv.de/StructureDefinition/KBV_PR_FOR_Practitioner|1.1.0");
+    practitioner
+        .addName()
+        .addGiven("Vorname")
+        .setFamily("ArztNachname")
+        .setUse(NameUse.OFFICIAL);
+    //Berufsbezeichnung
+    practitioner
+        .addQualification()
+        .getCode()
+        .setText("Thoraxchirurg")
+        .addCoding()
+        .setSystem("https://fhir.kbv.de/CodeSystem/KBV_CS_FOR_Berufsbezeichnung")
+        .setCode("Berufsbezeichnung");
+    //Typ
+    practitioner
+        .addQualification()
+        .getCode()
+        .addCoding()
+        .setSystem("https://fhir.kbv.de/CodeSystem/KBV_CS_FOR_Qualification_Type")
+        .setCode("00")
+        .setDisplay("Arzt");
+    return practitioner;
   }
 
   private static Patient createPatient() {
