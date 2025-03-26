@@ -5,10 +5,12 @@ import java.util.Calendar;
 import java.util.Date;
 import org.hl7.fhir.r4.model.Address.AddressType;
 import org.hl7.fhir.r4.model.CodeableConcept;
+import org.hl7.fhir.r4.model.Condition;
 import org.hl7.fhir.r4.model.HumanName;
 import org.hl7.fhir.r4.model.HumanName.NameUse;
 import org.hl7.fhir.r4.model.Patient;
 import org.hl7.fhir.r4.model.Practitioner;
+import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.StringType;
 
 public class ClientTutorial {
@@ -31,7 +33,25 @@ public class ClientTutorial {
     Practitioner practitioner = createPractitioner();
     System.out.println(iParser.encodeResourceToString(practitioner));
 
+    Condition condition = createCondition(patient, practitioner);
+    System.out.println(iParser.encodeResourceToString(condition));
 
+  }
+
+  private static Condition createCondition(Patient patient, Practitioner practitioner) {
+    Condition condition = new Condition();
+    condition
+        .getMeta()
+        .addProfile("https://fhir.kbv.de/StructureDefinition/KBV_PR_EAU_Condition_ICD|1.1.0");
+    condition.getCode()
+        .addCoding()
+        .setSystem("http://fhir.de/CodeSystem/bfarm/icd-10-gm")
+        .setCode("J01.1")
+        .setVersion("2025")
+        .setDisplay("Akute Sinusitis frontalis");
+    condition.setSubject(new Reference(patient));
+    condition.setAsserter(new Reference(practitioner));
+    return condition;
   }
 
   private static Practitioner createPractitioner() {
