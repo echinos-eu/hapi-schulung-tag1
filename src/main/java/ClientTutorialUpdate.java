@@ -14,7 +14,7 @@ import org.hl7.fhir.r4.model.Practitioner;
 import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.StringType;
 
-public class ClientTutorial {
+public class ClientTutorialUpdate {
 
   private static FhirContext ctx;
   private static IParser iParser;
