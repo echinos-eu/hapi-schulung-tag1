@@ -1,0 +1,36 @@
+{
+  "resourceType": "Patient",
+  "id": "1280",
+  "meta": {
+    "profile": [ "https://fhir.kbv.de/StructureDefinition/KBV_PR_FOR_Patient|1.1.0" ]
+  },
+  "identifier": [ {
+    "type": {
+      "coding": [ {
+        "system": "http://fhir.de/CodeSystem/identifier-type-de-basis",
+        "code": "GKV"
+      } ]
+    },
+    "system": "http://fhir.de/sid/gkv/kvid-10",
+    "value": "X453211327"
+  } ],
+  "name": [ {
+    "use": "official",
+    "family": "von Werner",
+    "_family": {
+      "extension": [ {
+        "url": "http://hl7.org/fhir/StructureDefinition/humanname-own-name",
+        "valueString": "Werner"
+      } ]
+    },
+    "given": [ "Patrick" ]
+  } ],
+  "birthDate": "3882-04-03",
+  "address": [ {
+    "type": "both",
+    "line": [ "Musterstraße 1" ],
+    "city": "Musterstadt",
+    "postalCode": "12345",
+    "country": "D"
+  } ]
+}
