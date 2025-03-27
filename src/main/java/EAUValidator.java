@@ -4,6 +4,7 @@ import ca.uhn.fhir.rest.client.api.IGenericClient;
 import ca.uhn.fhir.validation.FhirValidator;
 import java.io.IOException;
 import org.hl7.fhir.common.hapi.validation.support.CommonCodeSystemsTerminologyService;
+import org.hl7.fhir.common.hapi.validation.support.InMemoryTerminologyServerValidationSupport;
 import org.hl7.fhir.common.hapi.validation.support.NpmPackageValidationSupport;
 import org.hl7.fhir.common.hapi.validation.support.SnapshotGeneratingValidationSupport;
 import org.hl7.fhir.common.hapi.validation.support.ValidationSupportChain;
@@ -24,13 +25,14 @@ public class EAUValidator extends FhirValidator {
         npmPackageValidationSupport,
         new DefaultProfileValidationSupport(ctx),
         new CommonCodeSystemsTerminologyService(ctx),
+        new InMemoryTerminologyServerValidationSupport(ctx),
         new SnapshotGeneratingValidationSupport(ctx));
     FhirInstanceValidator validator = new FhirInstanceValidator(validationSupportChain);
     registerValidatorModule(validator);
 
     validator.setAnyExtensionsAllowed(false);
     validator.setNoExtensibleWarnings(true);
-    validator.setErrorForUnknownProfiles(true);
+    validator.setErrorForUnknownProfiles(false);
   }
 
 }
