@@ -28,40 +28,24 @@ public class ClientTutorial {
     iParser = ctx.newJsonParser();
     iParser.setPrettyPrint(true);
 
-    //Patient patient = createPatient();
+    Patient patient = createPatient();
 
-//    MethodOutcome patientOutCome = client.create()
-//        .resource(patient)
-//        .execute();
-//    String idPart = patientOutCome.getId().getIdPart();
-//    patient.setId(idPart);
-//    //System.out.println(iParser.encodeResourceToString(patient));
-    Patient patient = client.read()
-        .resource(Patient.class)
-        .withId("1258").execute();
-
-    if (patient.getActive()) {
-      patient.setActive(false);
-    } else {
-      patient.setActive(true);
-    }
-    System.out.println(patient.getActive());
-
-    MethodOutcome updateOutcome = client.update()
+    MethodOutcome patientOutCome = client.create()
         .resource(patient)
         .execute();
+    patient.setId(patientOutCome.getId().getIdPart());
+    System.out.println(iParser.encodeResourceToString(patient));
 
-    System.out.println(updateOutcome.getId());
 
-//    Practitioner practitioner = createPractitioner();
-//    MethodOutcome practitionerOutcome = client.create().resource(practitioner).execute();
-//    practitioner.setId(practitionerOutcome.getId().getIdPart());
-//    System.out.println(iParser.encodeResourceToString(practitioner));
-//
-//    Condition condition = createCondition(patient, practitioner);
-//    MethodOutcome conditionOutcome = client.create().resource(condition).execute();
-//    System.out.println("ID der Condition: " + conditionOutcome.getId().getIdPart());
-//    System.out.println(iParser.encodeResourceToString(condition));
+    Practitioner practitioner = createPractitioner();
+    MethodOutcome practitionerOutcome = client.create().resource(practitioner).execute();
+    practitioner.setId(practitionerOutcome.getId().getIdPart());
+    System.out.println(iParser.encodeResourceToString(practitioner));
+
+    Condition condition = createCondition(patient, practitioner);
+    MethodOutcome conditionOutcome = client.create().resource(condition).execute();
+    System.out.println("ID der Condition: " + conditionOutcome.getId().getIdPart());
+    System.out.println(iParser.encodeResourceToString(condition));
 
   }
 
